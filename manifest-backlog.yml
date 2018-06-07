@@ -5,8 +5,11 @@ applications:
   memory: 256M
   host: backlog-pal-ec
   path: Applications/BacklogServer/bin/Release/netcoreapp2.0/publish
+  env:
+    GRANT_TYPE: client_credentials
   services:
   - tracker-backlog-database
   - tracker-service-registry
   - tracker-circuit-breaker-dashboard
   - tracker-amqp
+  - tracker-sso

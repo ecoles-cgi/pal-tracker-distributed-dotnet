@@ -1,8 +1,14 @@
 ﻿using System;
 using System.Net.Http;
 using Allocations;
+using AuthDisabler;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -10,6 +16,7 @@ using Pivotal.Discovery.Client;
 using Steeltoe.CircuitBreaker.Hystrix;
 using Steeltoe.CloudFoundry.Connector.MySql.EFCore;
 using Steeltoe.Common.Discovery;
+using Steeltoe.Security.Authentication.CloudFoundry;
 
 namespace AllocationsServer
 {
@@ -25,12 +32,27 @@ namespace AllocationsServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            if (Configuration.GetValue("DISABLE_AUTH", false))
+            {
+                services.DisableClaimsVerification();
+            }
+            services.AddAuthorization(options =>
+                  options.AddPolicy("pal-tracker", policy => policy.RequireClaim("scope", "uaa.resource")));
+
             // Add framework services.
-            services.AddMvc();
+            services.AddMvc(mvcOptions => {
+                // Set Authorized as default policy
+                var policy = new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme)
+                                        .RequireAuthenticatedUser()
+                                        .RequireClaim("scope", "uaa.resource")
+                                        .Build();
+                mvcOptions.Filters.Add(new AuthorizeFilter(policy));
+            });
 
             services.AddDbContext<AllocationContext>(options => options.UseMySql(Configuration));
             services.AddScoped<IAllocationDataGateway, AllocationDataGateway>();
 
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddSingleton<IProjectClient>(sp =>
             {
                 var handler = new DiscoveryHttpClientHandler(sp.GetService<IDiscoveryClient>());
@@ -41,11 +63,19 @@ namespace AllocationsServer
                 };
 
                 var logger = sp.GetService<ILogger<ProjectClient>>();
-                return new ProjectClient(httpClient, logger);
+                var contextAccessor = sp.GetService<IHttpContextAccessor>();
+                return new ProjectClient(
+                      httpClient, logger,
+                      () => contextAccessor.HttpContext.GetTokenAsync("access_token")
+                  );
+                // return new ProjectClient(httpClient, logger);
                 // return new ProjectClient(httpClient);
             });
             services.AddDiscoveryClient(Configuration);
             services.AddHystrixMetricsStream(Configuration);
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                  .AddCloudFoundryJwtBearer(Configuration);
+            
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

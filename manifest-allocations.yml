@@ -5,8 +5,11 @@ applications:
   memory: 256M
   host: allocations-pal-ec
   path: Applications/AllocationsServer/bin/Release/netcoreapp2.0/publish
+  env:
+    GRANT_TYPE: client_credentials
   services:
   - tracker-allocations-database
   - tracker-service-registry
   - tracker-circuit-breaker-dashboard
   - tracker-amqp
+  - tracker-sso

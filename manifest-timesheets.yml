@@ -5,8 +5,11 @@ applications:
   memory: 256M
   host: timesheets-pal-ec
   path: Applications/TimesheetsServer/bin/Release/netcoreapp2.0/publish
+  env:
+    GRANT_TYPE: client_credentials
   services:
   - tracker-timesheets-database
   - tracker-service-registry
   - tracker-circuit-breaker-dashboard
   - tracker-amqp
+  - tracker-sso

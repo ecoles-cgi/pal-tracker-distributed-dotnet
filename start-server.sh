@@ -32,6 +32,7 @@ trap "kill 0" EXIT
         app=${apps[$i]}
         if [[ "$1" = "$app" ]] || [ -z "$1" ]
         then
+            export DISABLE_AUTH=true
             start_server "$app" "${ports[$i]}" &
         fi
     done

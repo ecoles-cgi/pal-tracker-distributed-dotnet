@@ -5,6 +5,9 @@ applications:
   memory: 256M
   host: registration-pal-ec
   path: Applications/RegistrationServer/bin/Release/netcoreapp2.0/publish
+  env:
+    GRANT_TYPE: client_credentials
   services:
   - tracker-registration-database
   - tracker-service-registry
+  - tracker-sso

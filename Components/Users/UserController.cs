@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Users
 {
+    [Authorize(Policy = "pal-tracker")]
     [Route("users"), Produces("application/json")]
     public class UserController : Controller
     {
