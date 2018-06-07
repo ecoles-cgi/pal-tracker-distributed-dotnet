@@ -39,7 +39,9 @@ namespace TimesheetsServer
                     BaseAddress = new Uri(Configuration.GetValue<string>("REGISTRATION_SERVER_ENDPOINT"))
                 };
 
-                return new ProjectClient(httpClient);
+                var logger = sp.GetService<ILogger<ProjectClient>>();
+                return new ProjectClient(httpClient, logger);
+                // return new ProjectClient(httpClient);
             });
             services.AddDiscoveryClient(Configuration);
         }
